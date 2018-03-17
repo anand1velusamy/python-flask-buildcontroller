@@ -18,17 +18,16 @@ node('jnlp') {
    
     stage('Push image') {
         /* Finally, we'll push the image to ECR on latest tag. */
-        sh "eval \$(aws ecr get-login --no-include-email --region us-west-1 | sed 's|https://||')"       
-        docker.withRegistry('https://700118620198.dkr.ecr.us-west-1.amazonaws.com/python-flask-buildcontroller:latest', 'ecr:us-west-1:ecr-credentials') {
-            docker.image('python-flask-buildcontroller').push('latest')
+        withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+          sh 'docker login -u $USERNAME -p $PASSWORD'
+          sh 'docker tag python-flask-buildcontroller:latest anandvelusamy/python-flask-buildcontroller:latest'
+          sh 'docker push anandvelusamy/python-flask-buildcontroller:latest'
+          sh 'python --version'
+          sh 'kubectl run python-flask-buildcontroller --image=anandvelusamy/python-flask-buildcontroller --port=80'
+          sh 'kubectl expose deployment python-flask-buildcontroller --type=LoadBalancer' 
+          sh 'sleep 20s'
+          sh 'kubectl describe deployments python-flask-buildcontroller'
+          sh 'kubectl describe svc python-flask-buildcontroller' 
     }
-    }
-
-    stage('Helm Push Stage') {
-        /* Finally, we'll push the image to Kubernetes Cluster. */
-        sh "eval \$(aws ecr get-login --no-include-email --region us-west-1 | sed 's|https://||')"
-        sh 'kubectl run python-flask-buildcontroller --image=700118620198.dkr.ecr.us-west-1.amazonaws.com/python-flask-buildcontroller:latest --port=80'
-        sh 'kubectl expose deployment python-flask-buildcontroller --type LoadBalancer'
-} 
-    
-    }
+    }   
+  }
