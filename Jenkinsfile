@@ -13,6 +13,8 @@ node('jnlp') {
 
     stage('Publish Tests Results'){
       echo " Will be integrated with Testing platforms in Phase 2"
+      logstashSend failBuild: true, maxLines: 1000
+	    
     }
     
    
